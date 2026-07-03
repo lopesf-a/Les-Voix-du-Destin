@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PLAYER
+  ADMIN
+}
+
+enum SessionStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum MessageRole {
+  PLAYER
+  MJ
+  SYSTEM
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  pseudo       String
+  role         Role          @default(PLAYER)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  characters   Character[]
+  sessions     GameSession[]
+}
+
+model Character {
+  id          String        @id @default(cuid())
+  userId      String
+  name        String
+  className   String
+  level       Int           @default(1)
+  hp          Int           @default(20)
+  maxHp       Int           @default(20)
+  xp          Int           @default(0)
+  stats       Json
+  inventory   Json
+  backstory   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions    GameSession[]
+}
+
+model Scenario {
+  id          String        @id @default(cuid())
+  title       String
+  summary     String
+  universe    String
+  difficulty  String        @default("Débutant")
+  prompt      String
+  isPublished Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  sessions    GameSession[]
+}
+
+model Rule {
+  id          String   @id @default(cuid())
+  title       String
+  category    String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GameSession {
+  id          String        @id @default(cuid())
+  userId      String
+  characterId String
+  scenarioId  String?
+  title       String
+  status      SessionStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character   Character     @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  scenario    Scenario?     @relation(fields: [scenarioId], references: [id])
+  messages    GameMessage[]
+  aiUsageLogs AiUsageLog[]
+}
+
+model GameMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      MessageRole
+  content   String
+  metadata  Json?
+  createdAt DateTime    @default(now())
+  session   GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model AiUsageLog {
+  id              String      @id @default(cuid())
+  sessionId       String?
+  provider        String      @default("mistral")
+  model           String
+  promptTokens    Int         @default(0)
+  completionTokens Int        @default(0)
+  totalTokens     Int         @default(0)
+  latencyMs       Int         @default(0)
+  success         Boolean     @default(true)
+  errorMessage    String?
+  createdAt       DateTime    @default(now())
+  session         GameSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+}

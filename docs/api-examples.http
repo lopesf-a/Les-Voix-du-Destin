@@ -1,0 +1,42 @@
+### Login
+POST http://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "player@example.com",
+  "password": "password123"
+}
+
+### Créer une session
+POST http://localhost:3001/api/sessions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "characterId": "demo-character",
+  "scenarioId": "scenario-varellis",
+  "title": "Test streaming"
+}
+
+### Tour IA classique avec jet forcé à 5
+POST http://localhost:3001/api/ai/turn
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sessionId": "demo-session",
+  "action": "J'attaque la silhouette avec mon épée.",
+  "forcedRoll": 5
+}
+
+### Tour IA streaming SSE avec jet forcé à 5
+POST http://localhost:3001/api/ai/turn/stream
+Authorization: Bearer {{token}}
+Accept: text/event-stream
+Content-Type: application/json
+
+{
+  "sessionId": "demo-session",
+  "action": "J'attaque la silhouette avec mon épée.",
+  "forcedRoll": 5
+}
