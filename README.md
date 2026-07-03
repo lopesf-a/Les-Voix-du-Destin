@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # JDR IA Mistral — SvelteKit + Express TS + PostgreSQL
 
 Application web de jeu de rôle assistée par IA. Le projet reprend l'architecture cadrée pour le Bloc 1 RNCP39583 : front SvelteKit, API Express TypeScript, base PostgreSQL, service IA Mistral isolé, logs d'usage IA et supervision minimale.
@@ -170,3 +171,6 @@ PV : 20/20 -> 14/20 si le moteur applique 6 dégâts.
 ```
 
 Dans l'interface, le champ facultatif "Jet forcé pour test local" permet de mettre `5` pour vérifier ce comportement en développement.
+=======
+# Les-Voix-du-Destin
+>>>>>>> 1c53fb1e32d994ac0c3cab71247f1ab7874a4e4e
