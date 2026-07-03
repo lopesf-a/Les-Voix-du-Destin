@@ -3,12 +3,21 @@
   import { saveAuth } from '$lib/auth';
   import type { User } from '$lib/types';
 
-  let email = 'player@example.com';
-  let password = 'password123';
-  let pseudo = 'Aventurier';
-  let mode: 'login' | 'register' = 'login';
-  let loading = false;
-  let error = '';
+  let email = $state('player@example.com');
+  let password = $state('password123');
+  let pseudo = $state('Aventurier');
+  let mode = $state<'login' | 'register'>('login');
+  let loading = $state(false);
+  let error = $state('');
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void submit();
+  }
+
+  function toggleMode() {
+    mode = mode === 'login' ? 'register' : 'login';
+  }
 
   async function submit() {
     loading = true;
@@ -36,7 +45,7 @@
 </script>
 
 <section class="auth-layout">
-  <form class="auth-card" on:submit|preventDefault={submit}>
+  <form class="auth-card" onsubmit={handleSubmit}>
     <p class="eyebrow">Compte de démonstration</p>
     <h1>{mode === 'login' ? 'Connexion' : 'Inscription'}</h1>
 
@@ -65,7 +74,7 @@
       {loading ? 'Chargement...' : mode === 'login' ? 'Se connecter' : 'Créer le compte'}
     </button>
 
-    <button class="ghost" type="button" on:click={() => mode = mode === 'login' ? 'register' : 'login'}>
+    <button class="ghost" type="button" onclick={toggleMode}>
       {mode === 'login' ? 'Créer un compte' : 'J’ai déjà un compte'}
     </button>
   </form>

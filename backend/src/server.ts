@@ -19,7 +19,7 @@ app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'jdr-ia-backend', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', service: 'les-voix-du-destin-backend', timestamp: new Date().toISOString() });
 });
 
 app.use('/api/auth', authRouter);
@@ -34,5 +34,5 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(env.PORT, () => {
-  logger.info(`API JDR IA lancée sur http://localhost:${env.PORT}`);
+  logger.info(`API Les Voix du Destin lancée sur http://localhost:${env.PORT}`);
 });

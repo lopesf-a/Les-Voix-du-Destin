@@ -1,4 +1,4 @@
-# Architecture — JDR IA Mistral
+# Architecture — Les Voix du Destin
 
 ```txt
 SvelteKit Frontend

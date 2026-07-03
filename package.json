@@ -1,8 +1,8 @@
 {
-  "name": "jdr-ia-mistral",
+  "name": "les-voix-du-destin",
   "version": "1.0.0",
   "private": true,
-  "description": "Application web JDR assistée par IA Mistral - SvelteKit + Express TypeScript + PostgreSQL",
+  "description": "Application web de JDR solo assistée par IA - SvelteKit + Express TypeScript + PostgreSQL",
   "workspaces": [
     "frontend",
     "backend"
@@ -18,7 +18,8 @@
     "db:down": "docker compose down",
     "db:migrate": "npm run prisma:migrate --workspace backend",
     "db:seed": "npm run prisma:seed --workspace backend",
-    "setup": "npm install && cp -n backend/.env.example backend/.env || true && cp -n frontend/.env.example frontend/.env || true"
+    "setup": "npm install && cp -n backend/.env.example backend/.env || true && cp -n frontend/.env.example frontend/.env || true",
+    "test": "npm run test --workspace backend"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

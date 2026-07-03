@@ -9,7 +9,7 @@
 </script>
 
 <nav class="nav">
-  <a class="brand" href="/">🎲 JDR IA</a>
+  <a class="brand" href="/">🎲 Les Voix du Destin</a>
   <div class="links">
     <a href="/dashboard">Dashboard</a>
     <a href="/characters">Personnages</a>
@@ -20,7 +20,7 @@
   <div class="user-zone">
     {#if user}
       <span>{user.pseudo}</span>
-      <button on:click={logout}>Déconnexion</button>
+      <button onclick={logout}>Déconnexion</button>
     {:else}
       <a class="button-link" href="/login">Connexion</a>
     {/if}

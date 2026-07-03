@@ -1,9 +1,9 @@
 <section class="hero">
   <div>
     <p class="eyebrow">MVP · SvelteKit · Express TS · PostgreSQL · Mistral</p>
-    <h1>Application web de JDR assistée par IA</h1>
+    <h1>Les Voix du Destin</h1>
     <p>
-      Crée un personnage, démarre une session et laisse un maître du jeu IA générer une narration contrôlée,
+      Crée un personnage, démarre une session et laisse les voix du destin guider une aventure narrative,
       historisée et mesurable.
     </p>
     <div class="actions">

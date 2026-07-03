@@ -212,7 +212,7 @@ cp frontend/.env.example frontend/.env
 ```env
 PORT=3001
 NODE_ENV=development
-DATABASE_URL="postgresql://jdr_user:jdr_password@localhost:5432/jdr_ia?schema=public"
+DATABASE_URL="postgresql://jdr_user:jdr_password@localhost:5432/les_voix_du_destin?schema=public"
 JWT_SECRET="change-me-in-production"
 MISTRAL_API_KEY=""
 MISTRAL_MODEL="mistral-small-latest"

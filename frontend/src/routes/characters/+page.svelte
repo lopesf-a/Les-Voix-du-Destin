@@ -7,12 +7,12 @@
   let loading = $state(true);
   let error = $state('');
 
-  let name = 'Nouveau héros';
-  let className = 'Guerrier';
-  let force = 10;
-  let dexterite = 10;
-  let intelligence = 10;
-  let backstory = '';
+  let name = $state('Nouveau héros');
+  let className = $state('Guerrier');
+  let force = $state(10);
+  let dexterite = $state(10);
+  let intelligence = $state(10);
+  let backstory = $state('');
 
   $effect(() => {
     loadCharacters();
@@ -28,6 +28,11 @@
     } finally {
       loading = false;
     }
+  }
+
+  function handleCreateCharacterSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void createCharacter();
   }
 
   async function createCharacter() {
@@ -57,7 +62,7 @@
 
 <section class="grid-2">
   <Card title="Nouveau personnage" subtitle="Stats simples pour MVP">
-    <form class="stack" on:submit|preventDefault={createCharacter}>
+    <form class="stack" onsubmit={handleCreateCharacterSubmit}>
       <label>Nom <input bind:value={name} /></label>
       <label>Classe <input bind:value={className} /></label>
       <div class="form-grid">

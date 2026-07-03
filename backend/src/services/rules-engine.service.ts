@@ -126,7 +126,7 @@ export function resolvePlayerAction(input: ResolveActionInput): RuleCheckResult 
   const statValue = readStat(input.stats, stat);
   const modifier = getModifier(statValue);
   const roll = rollD20(input.forcedRoll);
-  const critical = roll === 20 ? 'success' : roll === 1 ? 'failure' : null;
+  const critical: RuleCheckResult['critical'] = roll === 20 ? 'success' : roll === 1 ? 'failure' : null;
   const total = roll + modifier;
   const success = critical === 'success' || (critical !== 'failure' && total >= difficulty);
 

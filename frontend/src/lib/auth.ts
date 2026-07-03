@@ -1,7 +1,7 @@
 import type { User } from './types';
 
-export const tokenKey = 'jdr_ia_token';
-export const userKey = 'jdr_ia_user';
+export const tokenKey = 'les_voix_du_destin_token';
+export const userKey = 'les_voix_du_destin_user';
 
 export function getToken() {
   if (typeof localStorage === 'undefined') return null;

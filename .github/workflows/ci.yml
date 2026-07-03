@@ -1,0 +1,62 @@
+name: CI - Les Voix du Destin
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: jdr_user
+          POSTGRES_PASSWORD: jdr_password
+          POSTGRES_DB: les_voix_du_destin
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jdr_user -d les_voix_du_destin"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://jdr_user:jdr_password@localhost:5432/les_voix_du_destin?schema=public
+      JWT_SECRET: test-secret-minimum-12
+      MISTRAL_API_KEY: ""
+      MISTRAL_MODEL: mistral-small-latest
+      CORS_ORIGIN: http://localhost:5173
+      PUBLIC_API_URL: http://localhost:3001/api
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Générer Prisma
+        run: npm run prisma:generate --workspace backend
+
+      - name: Vérifier le backend
+        run: npm run lint --workspace backend
+
+      - name: Vérifier le frontend
+        run: npm run lint --workspace frontend
+
+      - name: Lancer les tests unitaires
+        run: npm run test
+
+      - name: Build complet
+        run: npm run build

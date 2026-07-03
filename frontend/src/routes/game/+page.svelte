@@ -102,6 +102,17 @@
     }
   }
 
+
+  function handleCreateSessionSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void createSession();
+  }
+
+  function handleSendActionSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void sendAction();
+  }
+
   function replaceMessage(messageId: string, nextMessage: GameMessage) {
     messages = messages.map((message) => (message.id === messageId ? nextMessage : message));
   }
@@ -211,14 +222,14 @@
 
 <section class="grid-2 align-start">
   <Card title="Lancer une session" subtitle="Choisir personnage et scénario">
-    <form class="stack" on:submit|preventDefault={createSession}>
+    <form class="stack" onsubmit={handleCreateSessionSubmit}>
       <label>
         Titre
         <input bind:value={title} />
       </label>
       <label>
         Personnage
-        <select bind:value={selectedCharacterId} on:change={updateActiveCharacterFromSession}>
+        <select bind:value={selectedCharacterId} onchange={updateActiveCharacterFromSession}>
           {#each characters as character}
             <option value={character.id}>{character.name} — {character.className}</option>
           {/each}
@@ -239,7 +250,7 @@
 
     <label>
       Session active
-      <select bind:value={selectedSessionId} on:change={handleSessionChange}>
+      <select bind:value={selectedSessionId} onchange={handleSessionChange}>
         {#each sessions as session}
           <option value={session.id}>{session.title}</option>
         {/each}
@@ -287,7 +298,7 @@
       {/each}
     </div>
 
-    <form class="stack" on:submit|preventDefault={sendAction}>
+    <form class="stack" onsubmit={handleSendActionSubmit}>
       <label>
         Action du joueur
         <textarea rows="4" bind:value={action}></textarea>
