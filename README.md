@@ -22,6 +22,7 @@ Ce projet a été réalisé dans le cadre du **RNCP39583 — Expert en développ
 - [Fonctionnement du moteur de règles](#fonctionnement-du-moteur-de-règles)
 - [Tests et qualité](#tests-et-qualité)
 - [Intégration continue](#intégration-continue)
+- [Déploiement continu cible](#déploiement-continu-cible)
 - [Sécurité](#sécurité)
 - [Accessibilité](#accessibilité)
 - [Documentation Bloc 2](#documentation-bloc-2)
@@ -360,9 +361,15 @@ Exemples de cas à tester :
 
 ## Intégration continue
 
-Le workflow cible repose sur GitHub Actions ou une solution équivalente.
+Le projet utilise GitHub Actions pour automatiser les vérifications qualité.
 
-À chaque push ou pull request, la CI doit vérifier :
+Le workflow de CI se trouve dans :
+
+```txt
+.github/workflows/ci.yml
+```
+
+À chaque push ou pull request vers `main` ou `develop`, la CI vérifie :
 
 ```txt
 1. Récupération du code
@@ -381,6 +388,49 @@ Objectif :
 - vérifier que le projet compile ;
 - garantir un niveau minimal de qualité ;
 - sécuriser les futures évolutions.
+
+Statut actuel : **CI opérationnelle**.
+
+---
+
+## Déploiement continu cible
+
+Une partie CD a été ajoutée afin de préparer le déploiement automatisé du MVP.
+
+Le workflow de CD se trouve dans :
+
+```txt
+.github/workflows/cd.yml
+```
+
+Il peut être déclenché :
+
+- automatiquement après une CI réussie sur `main` ;
+- manuellement depuis l’onglet GitHub Actions avec `workflow_dispatch`.
+
+Cibles proposées :
+
+| Partie | Cible | Rôle |
+|---|---|---|
+| Frontend | Vercel | Déploiement de l’interface SvelteKit |
+| Backend | Render | Déploiement de l’API Express TypeScript |
+| Base de données | PostgreSQL managé | Persistance de production |
+
+Secrets GitHub nécessaires :
+
+```txt
+RENDER_DEPLOY_HOOK_URL
+VERCEL_TOKEN
+VERCEL_ORG_ID
+VERCEL_PROJECT_ID
+PUBLIC_API_URL
+```
+
+Statut actuel : **CD cible préparée**. Elle devient opérationnelle dès que les services d’hébergement et les secrets GitHub sont configurés.
+
+Formulation recommandée pour le Bloc 2 :
+
+> CI opérationnelle ; CD cible préparée et activable après configuration des secrets d’hébergement.
 
 ---
 
@@ -470,6 +520,7 @@ docs/
   bugs.md
   securite-accessibilite.md
   deploiement.md
+  deploiement-continu.md
   manuel-utilisateur.md
   manuel-mise-a-jour.md
 ```
@@ -482,6 +533,7 @@ Documents recommandés :
 - documentation d’accessibilité ;
 - procédure d’installation ;
 - procédure de déploiement ;
+- procédure de déploiement continu cible ;
 - procédure de mise à jour ;
 - captures d’écran du prototype ;
 - preuves de tests ;

@@ -1,5 +1,13 @@
 # Changelog — Les Voix du Destin
 
+## v0.7.0 — Déploiement continu cible
+- Ajout du workflow `.github/workflows/cd.yml`.
+- Préparation du déploiement backend via Render deploy hook.
+- Préparation du déploiement frontend via Vercel CLI.
+- Ajout de la documentation `docs/deploiement-continu.md`.
+- Ajout des fichiers `.env.production.example` frontend et backend.
+
+
 ## v0.6.0 — Préparation Bloc 2
 
 - Renommage du projet en **Les Voix du Destin**.

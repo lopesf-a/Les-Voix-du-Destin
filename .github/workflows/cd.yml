@@ -1,0 +1,99 @@
+name: CD - Déploiement cible
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environnement de déploiement"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+  workflow_run:
+    workflows: ["CI - Les Voix du Destin"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-backend:
+    name: Déployer le backend Render
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Vérifier la configuration Render
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::notice::Secret RENDER_DEPLOY_HOOK_URL absent : déploiement backend ignoré."
+            exit 0
+          fi
+
+          echo "Déclenchement du déploiement backend Render..."
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "Déploiement backend déclenché."
+
+  deploy-frontend:
+    name: Déployer le frontend Vercel
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    env:
+      PUBLIC_API_URL: ${{ secrets.PUBLIC_API_URL }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Vérifier la configuration Vercel
+        id: vercel_config
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ] || [ -z "$PUBLIC_API_URL" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Secrets Vercel incomplets : déploiement frontend ignoré."
+            exit 0
+          fi
+
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
+      - name: Installer les dépendances
+        if: steps.vercel_config.outputs.configured == 'true'
+        run: npm ci
+
+      - name: Build frontend
+        if: steps.vercel_config.outputs.configured == 'true'
+        run: npm run build --workspace frontend
+        env:
+          PUBLIC_API_URL: ${{ secrets.PUBLIC_API_URL }}
+
+      - name: Déployer sur Vercel
+        if: steps.vercel_config.outputs.configured == 'true'
+        working-directory: frontend
+        run: |
+          npx vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+          npx vercel build --prod --token "$VERCEL_TOKEN"
+          npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"

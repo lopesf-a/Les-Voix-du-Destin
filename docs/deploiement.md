@@ -71,3 +71,27 @@ En cas de problème :
 2. restaurer les variables d’environnement précédentes ;
 3. vérifier la base de données ;
 4. relancer les tests de recette prioritaires.
+
+
+## Déploiement continu cible
+
+Un workflow CD a été ajouté dans :
+
+```txt
+.github/workflows/cd.yml
+```
+
+Ce workflow prépare le déploiement automatisé vers :
+
+- Render pour le backend Express TypeScript ;
+- Vercel pour le frontend SvelteKit.
+
+Il peut être déclenché automatiquement après une CI réussie sur `main` ou manuellement depuis GitHub Actions.
+
+Les secrets nécessaires sont documentés dans :
+
+```txt
+docs/deploiement-continu.md
+```
+
+Tant que les secrets d’hébergement ne sont pas configurés, le workflow ignore les étapes de déploiement concernées sans bloquer la CI.
