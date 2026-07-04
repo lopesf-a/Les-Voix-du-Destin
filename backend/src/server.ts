@@ -15,36 +15,56 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 const app = express();
 
 app.use(helmet());
+
 const allowedOrigins = [
-  'http://localhost:5173',
-  'https://les-voix-du-destin-frontend.vercel.app',
-  process.env.CORS_ORIGIN
+	'http://localhost:5173',
+	'https://les-voix-du-destin-frontend.vercel.app',
+	process.env.CORS_ORIGIN
 ]
-  .filter(Boolean)
-  .map((origin) => origin!.trim().replace(/\/$/, ''));
+	.filter(Boolean)
+	.map((origin) => origin!.trim().replace(/\/$/, ''));
 
 app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) {
-        return callback(null, true);
-      }
+	cors({
+		origin(origin, callback) {
+			if (!origin) {
+				return callback(null, true);
+			}
 
-      const normalizedOrigin = origin.trim().replace(/\/$/, '');
+			const normalizedOrigin = origin.trim().replace(/\/$/, '');
 
-      if (allowedOrigins.includes(normalizedOrigin)) {
-        return callback(null, true);
-      }
+			const isAllowed =
+				allowedOrigins.includes(normalizedOrigin) ||
+				normalizedOrigin.endsWith('.vercel.app');
 
-      return callback(new Error(`Origine CORS refusée : ${origin}`));
-    },
-    credentials: true
-  })
+			if (isAllowed) {
+				return callback(null, true);
+			}
+
+			logger.warn(
+				{
+					origin: normalizedOrigin,
+					allowedOrigins
+				},
+				'Origine CORS refusée'
+			);
+
+			return callback(null, false);
+		},
+		credentials: true,
+		methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+		allowedHeaders: ['Content-Type', 'Authorization']
+	})
 );
+
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'les-voix-du-destin-backend', timestamp: new Date().toISOString() });
+	res.json({
+		status: 'ok',
+		service: 'les-voix-du-destin-backend',
+		timestamp: new Date().toISOString()
+	});
 });
 
 app.use('/api/auth', authRouter);
@@ -59,5 +79,5 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(env.PORT, () => {
-  logger.info(`API Les Voix du Destin lancée sur http://localhost:${env.PORT}`);
+	logger.info(`API Les Voix du Destin lancée sur http://localhost:${env.PORT}`);
 });
