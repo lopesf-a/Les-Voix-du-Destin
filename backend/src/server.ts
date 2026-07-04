@@ -15,7 +15,32 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://les-voix-du-destin-frontend.vercel.app',
+  process.env.CORS_ORIGIN
+]
+  .filter(Boolean)
+  .map((origin) => origin!.trim().replace(/\/$/, ''));
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const normalizedOrigin = origin.trim().replace(/\/$/, '');
+
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Origine CORS refusée : ${origin}`));
+    },
+    credentials: true
+  })
+);
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api/health', (_req, res) => {
