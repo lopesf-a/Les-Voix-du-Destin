@@ -2,9 +2,38 @@
 
 ## Objectif
 
-Ce document décrit la partie **CD** du workflow CI/CD.
+Ce document décrit la partie **CD** du workflow CI/CD du projet **Les Voix du Destin**.
 
-Le projet possède déjà une intégration continue opérationnelle avec GitHub Actions : lint, tests unitaires et build complet. La partie déploiement continu a été ajoutée sous forme de workflow cible afin de pouvoir déployer automatiquement le backend et le frontend lorsque les secrets d'hébergement sont configurés.
+Le projet possède :
+
+- une **CI opérationnelle** avec GitHub Actions ;
+- un **frontend déployé sur Vercel** ;
+- un **backend déployé sur Render** ;
+- une **base PostgreSQL Neon** ;
+- une documentation de déploiement permettant de reproduire l’environnement.
+
+---
+
+## Environnement en ligne
+
+| Élément | Plateforme | Statut |
+|---|---|---|
+| Frontend SvelteKit | Vercel | Déployé |
+| Backend Express TypeScript | Render | Déployé |
+| Base de données PostgreSQL | Neon | Connectée |
+| IA | Mistral API | Connectée |
+| Healthcheck API | Render | Opérationnel |
+| CI | GitHub Actions | Opérationnelle |
+
+URLs de démonstration :
+
+```txt
+Frontend : https://les-voix-du-destin-frontend.vercel.app
+Backend  : https://les-voix-du-destin.onrender.com
+Health   : https://les-voix-du-destin.onrender.com/api/health
+```
+
+---
 
 ## Principe général
 
@@ -12,148 +41,197 @@ Le projet possède déjà une intégration continue opérationnelle avec GitHub 
 Push sur main
    |
    v
-CI GitHub Actions
-   |-- lint backend/frontend
-   |-- tests unitaires
-   |-- build complet
+GitHub
    |
-   v
-CD GitHub Actions
-   |-- déploiement backend Render
-   |-- déploiement frontend Vercel
+   +--> CI GitHub Actions
+   |       - lint backend/frontend
+   |       - tests unitaires
+   |       - build complet
+   |
+   +--> Vercel
+   |       - build frontend
+   |       - déploiement de l’interface
+   |
+   +--> Render
+           - build backend
+           - génération Prisma
+           - migrations Prisma
+           - lancement API Express
 ```
 
-Le workflow CD se trouve dans :
+La CD est donc assurée par les intégrations GitHub natives de **Vercel** et **Render**.  
+Un workflow GitHub Actions `cd.yml` existe aussi comme mécanisme complémentaire ou cible d’automatisation avancée.
+
+---
+
+## CI GitHub Actions
+
+Le workflow CI se trouve dans :
+
+```txt
+.github/workflows/ci.yml
+```
+
+Il vérifie :
+
+```txt
+1. Installation des dépendances
+2. Génération Prisma
+3. Lint backend
+4. Lint frontend
+5. Tests unitaires
+6. Build complet
+```
+
+Statut : **opérationnel**.
+
+---
+
+## CD Vercel — frontend
+
+### Configuration
+
+| Paramètre | Valeur |
+|---|---|
+| Root Directory | `frontend` |
+| Framework | SvelteKit |
+| Build Command | `npm run check && npm run build` |
+| Auto-Deploy | activé sur push GitHub |
+| URL | `https://les-voix-du-destin-frontend.vercel.app` |
+
+### Variable d’environnement
+
+```env
+PUBLIC_API_URL="https://les-voix-du-destin.onrender.com/api"
+```
+
+Cette variable est utilisée au build.  
+Si elle est modifiée, il faut relancer un déploiement Vercel.
+
+---
+
+## CD Render — backend
+
+### Configuration
+
+| Paramètre | Valeur |
+|---|---|
+| Runtime | Node |
+| Branch | `main` |
+| Root Directory | vide |
+| Auto-Deploy | On Commit |
+| Health Check Path | `/api/health` |
+| URL | `https://les-voix-du-destin.onrender.com` |
+
+### Build Command
+
+```bash
+npm ci && npm run prisma:generate --workspace backend && npm run prisma:deploy --workspace backend && npm run build --workspace backend
+```
+
+### Start Command
+
+```bash
+node backend/dist/src/server.js
+```
+
+### Variables d’environnement
+
+```env
+NODE_ENV=production
+NODE_VERSION=20
+PORT=3001
+DATABASE_URL="<url_neon>"
+JWT_SECRET="<secret_jwt_fort>"
+MISTRAL_API_KEY="<cle_mistral>"
+MISTRAL_MODEL="mistral-small-latest"
+CORS_ORIGIN="https://les-voix-du-destin-frontend.vercel.app"
+```
+
+---
+
+## Base de données Neon
+
+Neon fournit la base PostgreSQL de démonstration.
+
+La connexion est injectée dans Render via :
+
+```env
+DATABASE_URL="<url_neon>"
+```
+
+Les migrations sont appliquées au déploiement via Prisma :
+
+```bash
+npm run prisma:deploy --workspace backend
+```
+
+---
+
+## Workflow CD GitHub Actions complémentaire
+
+Le dépôt contient aussi :
 
 ```txt
 .github/workflows/cd.yml
 ```
 
-## Déclenchement
+Ce workflow documente et prépare une automatisation CD pilotée depuis GitHub Actions.
 
-Le workflow CD peut être déclenché de deux façons :
-
-| Déclencheur | Rôle |
-|---|---|
-| `workflow_run` | Déclenchement automatique après une CI réussie sur `main` |
-| `workflow_dispatch` | Déclenchement manuel depuis l'onglet GitHub Actions |
-
-Le déclenchement manuel permet de choisir l'environnement cible :
+Secrets GitHub prévus :
 
 ```txt
-staging
-production
+RENDER_DEPLOY_HOOK_URL
+VERCEL_TOKEN
+VERCEL_ORG_ID
+VERCEL_PROJECT_ID
+PUBLIC_API_URL
 ```
 
-## Cible de déploiement
+Ce workflow peut être utilisé si l’on souhaite que GitHub Actions pilote directement les déploiements via deploy hook Render et CLI Vercel.
 
-Le workflow est prévu pour une séparation claire entre frontend et backend :
+---
 
-| Partie | Cible proposée | Rôle |
-|---|---|---|
-| Frontend SvelteKit | Vercel | Hébergement de l'interface web |
-| Backend Express TypeScript | Render | Hébergement de l'API Node.js |
-| Base de données | PostgreSQL managé | Persistance applicative |
-| IA | Mistral API | Génération narrative |
+## Comportement attendu après push
 
-Cette séparation respecte l'architecture cadrée au Bloc 1 : frontend, API, base de données et service IA isolés.
+Après un push sur `main` :
 
-## Secrets GitHub nécessaires
+1. GitHub Actions lance la CI.
+2. Vercel reconstruit le frontend.
+3. Render reconstruit le backend.
+4. Prisma applique les migrations sur Neon.
+5. L’API redémarre.
+6. Le healthcheck `/api/health` vérifie que le backend répond.
 
-Les secrets doivent être configurés dans GitHub :
+---
 
-```txt
-Settings > Secrets and variables > Actions > New repository secret
-```
+## Preuves à conserver pour le Bloc 2
 
-### Secrets backend Render
+Captures recommandées :
 
-| Secret | Description |
-|---|---|
-| `RENDER_DEPLOY_HOOK_URL` | URL du deploy hook Render du service backend |
+- GitHub Actions vert ;
+- Vercel : déploiement réussi ;
+- Render : service live ;
+- Render : logs de build et démarrage API ;
+- endpoint `/api/health` ;
+- variables Vercel et Render masquées ;
+- application en production ;
+- parcours connexion / personnage / session JDR.
 
-### Secrets frontend Vercel
+---
 
-| Secret | Description |
-|---|---|
-| `VERCEL_TOKEN` | Token Vercel utilisé par GitHub Actions |
-| `VERCEL_ORG_ID` | Identifiant de l'équipe ou du compte Vercel |
-| `VERCEL_PROJECT_ID` | Identifiant du projet Vercel |
-| `PUBLIC_API_URL` | URL publique du backend déployé |
+## Formulation recommandée Bloc 2
 
-## Variables d'environnement de production
+> La CI GitHub Actions vérifie automatiquement le lint, les tests unitaires et le build complet. Le déploiement continu est activé via les intégrations GitHub de Vercel et Render : le frontend SvelteKit est déployé sur Vercel, le backend Express TypeScript sur Render, et la base PostgreSQL Neon est utilisée en environnement de démonstration. Un workflow `cd.yml` est également présent pour documenter une automatisation CD pilotée directement depuis GitHub Actions.
 
-### Backend
+---
 
-| Variable | Rôle |
-|---|---|
-| `PORT` | Port du serveur Node.js |
-| `NODE_ENV` | `production` |
-| `DATABASE_URL` | Connexion PostgreSQL de production |
-| `JWT_SECRET` | Secret robuste pour signer les tokens JWT |
-| `MISTRAL_API_KEY` | Clé API Mistral |
-| `MISTRAL_MODEL` | Modèle Mistral utilisé |
-| `CORS_ORIGIN` | URL autorisée du frontend |
+## Limites actuelles
 
-### Frontend
+L’environnement reste un MVP de démonstration :
 
-| Variable | Rôle |
-|---|---|
-| `PUBLIC_API_URL` | URL publique de l'API backend |
-
-## Commandes exécutées par la CD
-
-### Backend Render
-
-Le backend est déployé via un deploy hook Render :
-
-```bash
-curl -X POST "$RENDER_DEPLOY_HOOK_URL"
-```
-
-Render se charge ensuite d'exécuter les commandes configurées côté service, par exemple :
-
-```bash
-npm ci
-npm run prisma:deploy --workspace backend
-npm run build --workspace backend
-npm run start --workspace backend
-```
-
-### Frontend Vercel
-
-Le frontend est construit puis déployé avec la CLI Vercel :
-
-```bash
-npm ci
-npm run build --workspace frontend
-npx vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
-npx vercel build --prod --token "$VERCEL_TOKEN"
-npx vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
-```
-
-## Comportement si les secrets sont absents
-
-Le workflow CD est volontairement sécurisé :
-
-- si les secrets Render ne sont pas renseignés, le déploiement backend est ignoré ;
-- si les secrets Vercel ne sont pas renseignés, le déploiement frontend est ignoré ;
-- la CI reste indépendante et continue de valider le projet.
-
-Cela permet de conserver un dépôt utilisable même lorsque l'environnement d'hébergement n'est pas encore branché.
-
-## Formulation à utiliser dans le dossier Bloc 2
-
-> Une intégration continue GitHub Actions est opérationnelle et vérifie automatiquement le lint, les tests unitaires et le build complet. Une partie déploiement continu a été ajoutée avec un workflow CD cible : après une CI réussie sur `main`, le backend peut être déployé sur Render via deploy hook et le frontend sur Vercel via la CLI Vercel, sous réserve de configurer les secrets GitHub nécessaires.
-
-## Limite actuelle
-
-La CD est prête côté dépôt, mais elle dépend de la configuration externe des hébergeurs :
-
-- création du service backend Render ;
-- création du projet frontend Vercel ;
-- configuration d'une base PostgreSQL de production ;
-- ajout des secrets GitHub ;
-- vérification finale de l'URL `/api/health`.
-
-Cette limite est normale pour un MVP Bloc 2 : le protocole est documenté et automatisable, tandis que l'activation réelle dépend de l'environnement cible.
+- Render Free peut se mettre en veille ;
+- l’audit RGAA complet reste à finaliser ;
+- la supervision avancée n’est pas encore industrialisée ;
+- le workflow CD GitHub Actions peut encore être enrichi avec secrets et validations supplémentaires ;
+- les tests end-to-end ne sont pas encore automatisés.

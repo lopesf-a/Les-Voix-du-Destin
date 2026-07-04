@@ -7,30 +7,6 @@ Ce projet a été réalisé dans le cadre du **RNCP39583 — Expert en développ
 
 ---
 
-## Sommaire
-
-- [Présentation du projet](#présentation-du-projet)
-- [Fonctionnalités principales](#fonctionnalités-principales)
-- [Architecture technique](#architecture-technique)
-- [Stack utilisée](#stack-utilisée)
-- [Prérequis](#prérequis)
-- [Installation rapide](#installation-rapide)
-- [Variables d’environnement](#variables-denvironnement)
-- [Commandes utiles](#commandes-utiles)
-- [Comptes de démonstration](#comptes-de-démonstration)
-- [Structure de l’API](#structure-de-lapi)
-- [Fonctionnement du moteur de règles](#fonctionnement-du-moteur-de-règles)
-- [Tests et qualité](#tests-et-qualité)
-- [Intégration continue](#intégration-continue)
-- [Déploiement continu cible](#déploiement-continu-cible)
-- [Sécurité](#sécurité)
-- [Accessibilité](#accessibilité)
-- [Documentation Bloc 2](#documentation-bloc-2)
-- [Limites du MVP](#limites-du-mvp)
-- [Évolutions prévues](#évolutions-prévues)
-
----
-
 ## Présentation du projet
 
 **Les Voix du Destin** est un prototype MVP de jeu de rôle narratif assisté par IA.
@@ -45,6 +21,23 @@ L’objectif est de proposer une expérience de JDR solo dans laquelle :
 - les usages IA sont journalisés pour suivre les coûts, les erreurs et les performances.
 
 L’application repose sur une architecture séparée entre le frontend, le backend, la base de données et le service IA.
+
+---
+
+## Environnement de démonstration
+
+| Élément | Service | URL / rôle |
+|---|---|---|
+| Frontend | Vercel | `https://les-voix-du-destin-frontend.vercel.app` |
+| Backend | Render | `https://les-voix-du-destin.onrender.com` |
+| Healthcheck API | Render | `https://les-voix-du-destin.onrender.com/api/health` |
+| Base de données | Neon | PostgreSQL managé |
+| IA | Mistral API | Génération narrative |
+| CI | GitHub Actions | Lint, tests unitaires, build |
+| CD | Vercel + Render | Redéploiement automatique après push sur `main` |
+
+Cet environnement correspond à un **déploiement de démonstration en ligne** adapté au Bloc 2.  
+Il ne s’agit pas encore d’une production finale, mais d’un environnement représentatif permettant de valider le prototype.
 
 ---
 
@@ -77,6 +70,8 @@ les-voix-du-destin/
   frontend/              Application SvelteKit
   backend/               API Express TypeScript
   backend/prisma/        Schéma Prisma et migrations
+  docs/                  Documentation Bloc 2
+  .github/workflows/     Workflows CI/CD
   docker-compose.yml     Base PostgreSQL locale
   README.md              Documentation principale
 ```
@@ -87,12 +82,12 @@ Flux principal :
 Navigateur joueur
       |
       v
-Frontend SvelteKit
+Frontend SvelteKit sur Vercel
       |
       v
-API Express TypeScript
+API Express TypeScript sur Render
       |
-      +--> PostgreSQL / Prisma
+      +--> PostgreSQL Neon via Prisma
       |
       +--> Moteur de règles : dés, PV, XP, difficulté
       |
@@ -112,6 +107,7 @@ API Express TypeScript
 - HTML / CSS
 - Appels API REST
 - Streaming SSE côté client
+- Déploiement Vercel
 
 ### Backend
 
@@ -124,10 +120,12 @@ API Express TypeScript
 - Bcrypt
 - Helmet
 - CORS
+- Déploiement Render
 
 ### Base de données
 
 - PostgreSQL
+- Neon en environnement en ligne
 - Docker Compose pour l’environnement local
 - Prisma pour le mapping objet-relationnel
 
@@ -140,75 +138,42 @@ API Express TypeScript
 
 ---
 
-## Prérequis
+## Installation locale
 
-Avant de lancer le projet, il faut disposer de :
+Prérequis :
 
 - Node.js 20 ou supérieur ;
 - npm 10 ou supérieur ;
 - Docker Desktop ou PostgreSQL local ;
 - une clé API Mistral optionnelle.
 
-La clé Mistral n’est pas obligatoire pour tester le projet, car un mode mock est prévu.
-
----
-
-## Installation rapide
-
-Cloner le projet puis installer les dépendances :
+Installation :
 
 ```bash
 npm run setup
-```
-
-Lancer la base PostgreSQL avec Docker :
-
-```bash
 npm run db:up
-```
-
-Appliquer le schéma Prisma :
-
-```bash
 npm run db:migrate
-```
-
-Insérer les données de démonstration :
-
-```bash
 npm run db:seed
-```
-
-Lancer le frontend et le backend :
-
-```bash
 npm run dev
 ```
 
-Application frontend :
+Application locale :
 
 ```txt
 http://localhost:5173
 ```
 
-API backend :
+API locale :
 
 ```txt
-http://localhost:3001
+http://localhost:3001/api
 ```
 
 ---
 
 ## Variables d’environnement
 
-Copier les fichiers exemples si la commande `setup` ne les a pas déjà créés :
-
-```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-```
-
-### Backend
+### Backend local
 
 ```env
 PORT=3001
@@ -220,13 +185,30 @@ MISTRAL_MODEL="mistral-small-latest"
 CORS_ORIGIN="http://localhost:5173"
 ```
 
-### Frontend
+### Frontend local
 
 ```env
 PUBLIC_API_URL="http://localhost:3001/api"
 ```
 
-### Remarque sécurité
+### Backend Render
+
+```env
+NODE_ENV=production
+NODE_VERSION=20
+PORT=3001
+DATABASE_URL="<url_neon>"
+JWT_SECRET="<secret_jwt_fort>"
+MISTRAL_API_KEY="<cle_mistral>"
+MISTRAL_MODEL="mistral-small-latest"
+CORS_ORIGIN="https://les-voix-du-destin-frontend.vercel.app"
+```
+
+### Frontend Vercel
+
+```env
+PUBLIC_API_URL="https://les-voix-du-destin.onrender.com/api"
+```
 
 Le fichier `.env` ne doit jamais être versionné dans Git.  
 Seuls les fichiers `.env.example` doivent être conservés dans le dépôt.
@@ -240,18 +222,18 @@ npm run dev                 # Lance le frontend et le backend
 npm run dev:backend         # Lance uniquement le backend
 npm run dev:frontend        # Lance uniquement le frontend
 npm run db:up               # Lance PostgreSQL avec Docker
-npm run db:migrate          # Applique les migrations Prisma
+npm run db:migrate          # Applique les migrations Prisma en local
 npm run db:seed             # Ajoute les données de démonstration
-npm run build               # Build frontend + backend
 npm run lint                # Vérifie la qualité du code
-npm run test                # Lance les tests unitaires si configurés
+npm run test                # Lance les tests unitaires
+npm run build               # Build frontend + backend
 ```
 
 ---
 
 ## Comptes de démonstration
 
-Après l’exécution de la commande :
+En local, après :
 
 ```bash
 npm run db:seed
@@ -263,6 +245,8 @@ Les comptes suivants peuvent être utilisés :
 Joueur : player@example.com / password123
 Admin  : admin@example.com / password123
 ```
+
+En production Neon, si le compte de démonstration n’existe pas, utiliser le bouton **Créer un compte** ou exécuter le seed une seule fois sur la base de démonstration.
 
 ---
 
@@ -290,6 +274,12 @@ GET    /api/metrics/overview
 GET    /api/health
 ```
 
+Healthcheck de production :
+
+```txt
+https://les-voix-du-destin.onrender.com/api/health
+```
+
 ---
 
 ## Fonctionnement du moteur de règles
@@ -311,26 +301,13 @@ Pour chaque action joueur :
 9. Mistral raconte la scène en respectant le résultat calculé.
 ```
 
-Exemple de jet :
-
-```txt
-Jet 1d20 : 5
-Modificateur : +1
-Total : 6
-Difficulté : 12
-Résultat : échec
-Conséquence : perte de PV ou absence de progression
-```
-
-Ce choix permet d’éviter que l’IA invente seule les règles ou modifie l’état du personnage de manière incohérente.
+Ce choix évite que l’IA invente seule les règles ou modifie l’état du personnage de manière incohérente.
 
 ---
 
 ## Tests et qualité
 
-Le projet doit être vérifié avant chaque livraison.
-
-Commandes prévues :
+Le projet est vérifié avant livraison avec :
 
 ```bash
 npm run lint
@@ -338,24 +315,13 @@ npm run test
 npm run build
 ```
 
-Les tests unitaires doivent prioritairement couvrir :
+Les tests unitaires couvrent en priorité :
 
 - le moteur de règles ;
 - le calcul réussite / échec ;
 - la gestion des points de vie ;
 - les soins ;
-- la validation des entrées ;
-- les services backend critiques.
-
-Exemples de cas à tester :
-
-| Cas testé | Résultat attendu |
-|---|---|
-| Jet forcé à 5 | Échec contre une difficulté standard |
-| Jet forcé à 20 | Réussite critique ou réussite forte |
-| Soin supérieur aux PV max | Les PV ne dépassent pas le maximum |
-| Attaque réussie | Les PV de la cible diminuent |
-| Action inconnue | L’action reste traitée comme générique |
+- les actions génériques.
 
 ---
 
@@ -382,83 +348,34 @@ Le workflow de CI se trouve dans :
 8. Build complet
 ```
 
-Objectif :
-
-- éviter les régressions ;
-- vérifier que le projet compile ;
-- garantir un niveau minimal de qualité ;
-- sécuriser les futures évolutions.
-
 Statut actuel : **CI opérationnelle**.
 
 ---
 
-## Déploiement continu cible
+## Déploiement continu
 
-Une partie CD a été ajoutée afin de préparer le déploiement automatisé du MVP.
+Le projet dispose désormais d’un déploiement en ligne :
 
-Le workflow de CD se trouve dans :
+| Partie | Plateforme | Statut |
+|---|---|---|
+| Frontend | Vercel | Déployé |
+| Backend | Render | Déployé |
+| Base de données | Neon | Connectée |
+| Healthcheck | Render | Opérationnel |
+
+La CD est assurée par les intégrations GitHub natives de Vercel et Render : après un push sur `main`, les services peuvent reconstruire et redéployer automatiquement l’application.
+
+Un workflow complémentaire existe également dans :
 
 ```txt
 .github/workflows/cd.yml
 ```
 
-Il peut être déclenché :
+Il permet de documenter et préparer une automatisation CD pilotée depuis GitHub Actions via secrets.
 
-- automatiquement après une CI réussie sur `main` ;
-- manuellement depuis l’onglet GitHub Actions avec `workflow_dispatch`.
+Formulation recommandée Bloc 2 :
 
-Cibles proposées :
-
-| Partie | Cible | Rôle |
-|---|---|---|
-| Frontend | Vercel | Déploiement de l’interface SvelteKit |
-| Backend | Render | Déploiement de l’API Express TypeScript |
-| Base de données | PostgreSQL managé | Persistance de production |
-
-Secrets GitHub nécessaires :
-
-```txt
-RENDER_DEPLOY_HOOK_URL
-VERCEL_TOKEN
-VERCEL_ORG_ID
-VERCEL_PROJECT_ID
-PUBLIC_API_URL
-```
-
-Statut actuel : **CD cible préparée**. Elle devient opérationnelle dès que les services d’hébergement et les secrets GitHub sont configurés.
-
-Formulation recommandée pour le Bloc 2 :
-
-> CI opérationnelle ; CD cible préparée et activable après configuration des secrets d’hébergement.
-
----
-
-## Workflow Git
-
-Pendant la première phase du MVP, le développement a été réalisé principalement sur une branche principale afin d’avancer rapidement sur une preuve de concept individuelle.
-
-Cette organisation est suffisante pour un prototype court, mais elle limite la traçabilité fine des évolutions.
-
-Le workflow cible pour les prochaines itérations est le suivant :
-
-```txt
-main           Version stable
-develop        Version d’intégration
-feature/*      Nouvelles fonctionnalités
-fix/*          Corrections de bugs
-release/*      Préparation d’une version livrable
-```
-
-Exemples :
-
-```txt
-feature/tests-unitaires
-feature/ci-github-actions
-feature/accessibilite-formulaires
-fix/erreur-streaming-ia
-release/v1-demo
-```
+> La CI est opérationnelle avec GitHub Actions. Le projet dispose également d’un environnement en ligne : frontend sur Vercel, backend sur Render et base PostgreSQL sur Neon. Le déploiement continu est activé via les intégrations GitHub des hébergeurs, avec un workflow CD GitHub Actions documenté comme mécanisme complémentaire.
 
 ---
 
@@ -471,47 +388,38 @@ Mesures de sécurité prévues ou déjà présentes :
 | Injection | Utilisation de Prisma et validation des entrées |
 | Données invalides | Schémas de validation avec Zod |
 | Mot de passe compromis | Hash des mots de passe avec bcrypt |
-| Secret exposé | Variables sensibles dans `.env` |
+| Secret exposé | Variables sensibles dans `.env`, non versionnées |
 | Accès non autorisé | Middleware JWT sur les routes protégées |
 | CORS trop permissif | Origine autorisée configurée avec `CORS_ORIGIN` |
 | Headers HTTP faibles | Utilisation de Helmet |
 | Payload trop lourd | Limitation de la taille JSON |
 | Erreur serveur trop détaillée | Messages d’erreur contrôlés côté client |
-
-Bonnes pratiques associées :
-
-- ne jamais versionner `.env` ;
-- utiliser un secret JWT robuste en production ;
-- limiter les logs sensibles ;
-- contrôler les entrées utilisateur ;
-- surveiller les dépendances ;
-- vérifier les erreurs backend.
+| Dépendance IA externe | Service IA isolé + mode mock |
+| Dérive IA | Le backend calcule les règles, l’IA raconte seulement |
 
 ---
 
 ## Accessibilité
 
-Le prototype vise une interface simple, lisible et utilisable.
-
-Points à contrôler :
+Premières mesures RGAA appliquées :
 
 | Point | Mesure |
 |---|---|
 | Structure | Pages organisées avec titres et sections |
-| Formulaires | Champs identifiés et compréhensibles |
-| Navigation | Parcours utilisateur simple |
-| Erreurs | Messages d’erreur lisibles |
-| Contrastes | Interface claire et lisible |
-| Clavier | Amélioration prévue de la navigation clavier |
-| RGAA | Audit manuel prévu sur les écrans principaux |
+| Formulaires | Champs identifiés par labels visibles |
+| Navigation | Menu principal présent sur les pages |
+| Erreurs | Messages d’erreur lisibles côté utilisateur |
+| Contrastes | Interface sombre avec texte clair |
+| Boutons | Libellés explicites |
+| Langue | Interface en français |
 
-L’accessibilité complète reste une amélioration prévue pour une version plus avancée.
+L’audit RGAA complet reste à compléter pour une version de production finale.
 
 ---
 
 ## Documentation Bloc 2
 
-Pour répondre aux attentes du Bloc 2 RNCP39583, le projet doit être accompagné des documents suivants :
+Documents fournis ou attendus :
 
 ```txt
 docs/
@@ -523,22 +431,18 @@ docs/
   deploiement-continu.md
   manuel-utilisateur.md
   manuel-mise-a-jour.md
+  preuves-commandes.md
 ```
 
-Documents recommandés :
+Ces documents couvrent :
 
 - cahier de recette fonctionnelle ;
 - suivi des anomalies ;
-- documentation de sécurité ;
-- documentation d’accessibilité ;
-- procédure d’installation ;
-- procédure de déploiement ;
-- procédure de déploiement continu cible ;
+- sécurité et accessibilité ;
+- installation et déploiement ;
+- CI/CD ;
 - procédure de mise à jour ;
-- captures d’écran du prototype ;
-- preuves de tests ;
-- preuves de build ;
-- preuves de CI/CD.
+- preuves de tests et build.
 
 ---
 
@@ -571,21 +475,22 @@ Les prochaines évolutions possibles sont :
 - amélioration de la mémoire de session ;
 - système de sauvegarde avancé ;
 - ajout de rôles utilisateur plus détaillés ;
-- audit accessibilité plus complet ;
-- déploiement continu vers un environnement de démonstration.
+- audit accessibilité complet ;
+- amélioration du workflow CD GitHub Actions avec secrets configurés.
 
 ---
 
 ## Statut du projet
 
-Version actuelle : **MVP de démonstration**
+Version actuelle : **MVP de démonstration déployé**
 
 Objectif principal :
 
 ```txt
 Prouver la faisabilité technique d’un JDR solo assisté par IA,
 avec une architecture web moderne, un backend responsable des règles,
-une base PostgreSQL persistante et une intégration IA encadrée.
+une base PostgreSQL persistante, une intégration IA encadrée,
+une CI opérationnelle et un environnement en ligne.
 ```
 
 ---
