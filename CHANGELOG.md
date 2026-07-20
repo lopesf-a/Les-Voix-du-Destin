@@ -1,5 +1,25 @@
 # Changelog — Les Voix du Destin
 
+## v1.0.1 — Correctifs production et maintien opérationnel
+
+- Correction de la configuration CORS entre le frontend Vercel et le backend Render.
+- Correction de la variable `CORS_ORIGIN` côté Render afin d'autoriser précisément le domaine Vercel de production.
+- Renforcement du middleware CORS backend pour éviter les erreurs serveur 500 lors d'une origine non reconnue.
+- Correction de la variable frontend `PUBLIC_API_URL` pour pointer vers l'API Render en production.
+- Correction de la commande de démarrage Render avec `node backend/dist/src/server.js`.
+- Validation du healthcheck `/api/health` avec un statut `ok`.
+- Vérification du parcours utilisateur après redéploiement : connexion, dashboard et session JDR.
+- Ajout de preuves de maintien opérationnel : logs Render, métriques réseau, déploiement Vercel, GitHub Actions, dashboard, `npm audit` et `npm outdated`.
+
+## v1.0.0 — MVP déployé pour le Bloc 2
+
+- Mise en ligne du frontend SvelteKit sur Vercel.
+- Mise en ligne du backend Express TypeScript sur Render.
+- Utilisation de PostgreSQL Neon comme base managée de démonstration.
+- Validation du parcours MVP : authentification, personnages, sessions, MJ IA, dashboard et historique.
+- Validation de la CI GitHub Actions : lint, tests unitaires et build.
+- Documentation du livrable Bloc 2 : architecture, sécurité, accessibilité, recette, anomalies et manuels.
+
 ## v0.7.0 — Déploiement continu cible
 - Ajout du workflow `.github/workflows/cd.yml`.
 - Préparation du déploiement backend via Render deploy hook.
