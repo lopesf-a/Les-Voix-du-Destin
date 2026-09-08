@@ -58,7 +58,7 @@ function extractDeltaContent(data: unknown): string {
 }
 
 export async function generateMistralTurn(messages: ChatMessage[], playerAction: string): Promise<MistralTurnResult> {
-  if (env.AI_MODE === 'mock' || !env.MISTRAL_API_KEY) { {
+  if (env.AI_MODE === 'mock' || !env.MISTRAL_API_KEY) { 
     return {
       content: buildMockAnswer(playerAction),
       model: 'mock-mistral-dev',
@@ -124,7 +124,7 @@ export async function* streamMistralTurn(
   messages: ChatMessage[],
   playerAction: string
 ): AsyncGenerator<MistralStreamDelta, MistralTurnResult, void> {
-  if (env.AI_MODE === 'mock' || !env.MISTRAL_API_KEY) { {
+  if (env.AI_MODE === 'mock' || !env.MISTRAL_API_KEY) { 
     const content = buildMockAnswer(playerAction);
     const chunks = content.match(/.{1,28}(\s|$)/g) ?? [content];
 
