@@ -84,9 +84,21 @@ export async function generateMistralTurn(messages: ChatMessage[], playerAction:
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Erreur Mistral ${response.status}: ${text}`);
+  const text = await response.text();
+
+  if (response.status === 429) {
+    return {
+      content: buildMockAnswer(playerAction),
+      model: 'mock-mistral-rate-limit',
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      mock: true
+    };
   }
+
+  throw new Error(`Erreur Mistral ${response.status}: ${text}`);
+}
 
   const data = await response.json() as {
     choices?: Array<{ message?: { content?: string } }>;
