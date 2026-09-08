@@ -78,6 +78,8 @@ app.use('/api/metrics', metricsRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(env.PORT, () => {
-	logger.info(`API Les Voix du Destin lancée sur http://localhost:${env.PORT}`);
+const host = '0.0.0.0';
+
+app.listen(env.PORT, host, () => {
+  logger.info(`API Les Voix du Destin lancée sur http://${host}:${env.PORT}`);
 });
