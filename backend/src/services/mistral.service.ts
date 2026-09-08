@@ -158,10 +158,30 @@ export async function* streamMistralTurn(
     })
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Erreur Mistral ${response.status}: ${text}`);
+ if (!response.ok) {
+  const text = await response.text();
+
+  if (response.status === 429) {
+    const content = buildMockAnswer(playerAction);
+    const chunks = content.match(/.{1,28}(\s|$)/g) ?? [content];
+
+    for (const chunk of chunks) {
+      await sleep(35);
+      yield { type: 'delta', content: chunk };
+    }
+
+    return {
+      content,
+      model: 'mock-mistral-rate-limit',
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      mock: true
+    };
   }
+
+  throw new Error(`Erreur Mistral ${response.status}: ${text}`);
+}
 
   if (!response.body) {
     throw new Error('Flux Mistral indisponible.');
